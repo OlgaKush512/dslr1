@@ -1,43 +1,60 @@
 import numpy as np
 import pandas as pd
+import argparse
 
 def sigmoid(z):
     z = np.clip(z, -500, 500)
     return 1 / (1 + np.exp(-z))
 
 def predict_one_vs_all(X, all_theta):
-    probs = sigmoid(X @ all_theta.T) 
-    return np.argmax(probs, axis=1)  
+    probs = sigmoid(X @ all_theta.T)
+    return np.argmax(probs, axis=1)
 
-data = pd.read_csv('./datasets/dataset_test.csv')
+def custom_mean(X):
+    return sum(X) / len(X)
 
-if data.isnull().values.any():
-    print("Missing values found, filling them with the median.")
-    data.fillna(data.median(numeric_only=True), inplace=True)
+def custom_std(X, mean):
+    variance = sum((x - mean) ** 2 for x in X) / len(X)
+    return variance ** 0.5
 
-X = data.iloc[:, 6:].values
+def main(weights_path, dataset_path):
+    data = pd.read_csv(dataset_path)
 
-print(f"Example of the data after loading: {X[:5]}")
+    if data.isnull().values.any():
+        print("Missing values found, filling them with the median.")
+        data.fillna(data.median(numeric_only=True), inplace=True)
 
-indices = data['Index']
+    X = data.iloc[:, 6:].values
+    print(f"Example of the data after loading: {X[:5]}")
 
-mean = X.mean(axis=0)
-std = X.std(axis=0)
-X = (X - mean) / std
+    indices = data['Index']
 
-X = np.hstack([np.ones((X.shape[0], 1)), X])
+    mean = [custom_mean(X[:, i]) for i in range(X.shape[1])]
+    std = [custom_std(X[:, i], mean[i]) for i in range(X.shape[1])]
+    X = (X - mean) / std
 
-all_theta = np.loadtxt('weights.csv', delimiter=',')
+    X = np.hstack([np.ones((X.shape[0], 1)), X])
 
-if all_theta.shape[1] != X.shape[1]:
-    raise ValueError(f"The dimensions of the weights and features do not match: {all_theta.shape[1]} != {X.shape[1]}")
+    all_theta = np.loadtxt(weights_path, delimiter=',')
 
-predictions = predict_one_vs_all(X, all_theta)
+    if all_theta.shape[1] != X.shape[1]:
+        raise ValueError(f"The dimensions of the weights and features do not match: {all_theta.shape[1]} != {X.shape[1]}")
 
-houses = {0: 'Gryffindor', 1: 'Hufflepuff', 2: 'Ravenclaw', 3: 'Slytherin'}
-predicted_houses = [houses[p] for p in predictions]
+    predictions = predict_one_vs_all(X, all_theta)
 
-output = pd.DataFrame({'Index': indices, 'Hogwarts House': predicted_houses})
-output.to_csv('houses.csv', index=False)
+    houses = {0: 'Gryffindor', 1: 'Hufflepuff', 2: 'Ravenclaw', 3: 'Slytherin'}
+    predicted_houses = [houses[p] for p in predictions]
 
-print("Predictions have been successfully saved to the file houses.csv.")
+    output = pd.DataFrame({'Index': indices, 'Hogwarts House': predicted_houses})
+    output.to_csv('houses.csv', index=False)
+
+    print("Predictions have been successfully saved to the file houses.csv.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Predict Hogwarts houses from a dataset.')
+    parser.add_argument('weights_path', type=str, help='Path to the weights file (CSV format).')
+    parser.add_argument('dataset_path', type=str, help='Path to the dataset file (CSV format).')
+
+    args = parser.parse_args()
+
+    main(args.weights_path, args.dataset_path)

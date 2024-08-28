@@ -1,7 +1,6 @@
 import csv
 import sys
 import matplotlib.pyplot as plt
-import math
 
 def load_data(file_path):
     try:
@@ -34,7 +33,7 @@ def load_data(file_path):
 def plot_histogram(data):
     num_courses = len(data)
     num_cols = 3  
-    num_rows = math.ceil(num_courses / num_cols) 
+    num_rows = custom_ceil(num_courses / num_cols) 
     
     fig, axes = plt.subplots(num_rows, num_cols, figsize=(18, num_rows * 6))
     axes = axes.flatten()  
@@ -57,6 +56,11 @@ def plot_histogram(data):
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.8, wspace=0.2,top=0.95) 
     plt.show()
+
+def custom_ceil(x):
+    if x == int(x):
+        return int(x)
+    return int(x) + 1
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

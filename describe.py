@@ -1,5 +1,4 @@
 import csv
-import math
 import sys
 
 def calculate_mean(values):
@@ -7,11 +6,29 @@ def calculate_mean(values):
 
 def calculate_std(values, mean):
     variance = sum((x - mean) ** 2 for x in values) / len(values)
-    return math.sqrt(variance)
+    return variance ** 0.5
 
 def calculate_percentile(values, percentile):
     index = int(len(values) * percentile / 100)
     return sorted(values)[index]
+
+def calculate_median(values):
+    if not values:
+        raise ValueError("The list is empty")
+
+    sorted_numbers = sorted(values)
+    n = len(sorted_numbers)
+    mid = n // 2
+
+    if n % 2 == 0:
+        median = (sorted_numbers[mid - 1] + sorted_numbers[mid]) / 2
+    else:
+        median = sorted_numbers[mid]
+
+    return median
+
+def calculate_unique_values(values):
+    return len(set(values))
 
 def describe(file_path):
     try:
@@ -25,7 +42,7 @@ def describe(file_path):
                     if value:  
                         data[headers[i]].append(float(value))
             
-            metrics = ['Count', 'Mean', 'Std', 'Min', '25%', '50%', '75%', 'Max']
+            metrics = ['Count', 'Mean', 'Std', 'Min', '25%', '50%', '75%', 'Max', 'Median', 'Unique']
             results = {metric: [] for metric in metrics}
             
             for feature, values in data.items():
@@ -37,6 +54,8 @@ def describe(file_path):
                 percentile_25 = calculate_percentile(values, 25)
                 percentile_50 = calculate_percentile(values, 50)
                 percentile_75 = calculate_percentile(values, 75)
+                median = calculate_median(values)
+                unique = calculate_unique_values(values)
                 
                 results['Count'].append(count)
                 results['Mean'].append(mean)
@@ -46,6 +65,10 @@ def describe(file_path):
                 results['50%'].append(percentile_50)
                 results['75%'].append(percentile_75)
                 results['Max'].append(max_val)
+                results['Median'].append(median)
+                results['Unique'].append(unique)
+
+
             
             max_feature_length = max(len(feature) for feature in data.keys())
             column_width = min(max_feature_length + 4, 15)
