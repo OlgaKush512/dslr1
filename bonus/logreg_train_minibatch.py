@@ -12,22 +12,31 @@ def cost_function(X, y, theta):
     epsilon = 1e-5
     return - (1/m) * np.sum(y * np.log(h + epsilon) + (1 - y) * np.log(1 - h + epsilon))
 
-def gradient_descent(X, y, alpha, iterations):
+def mini_batch_gradient_descent(X, y, alpha, iterations, batch_size):
     m, n = X.shape
     theta = np.zeros(n)
     cost_history = []
 
     for i in range(iterations):
-        h = sigmoid(X @ theta)
-        gradient = (1/m) * (X.T @ (h - y))
-        theta -= alpha * gradient
+        indices = np.random.permutation(m)
+        X_shuffled = X[indices]
+        y_shuffled = y[indices]
+
+        for j in range(0, m, batch_size):
+            end = j + batch_size
+            X_batch = X_shuffled[j:end]
+            y_batch = y_shuffled[j:end]
+
+            h = sigmoid(X_batch @ theta)
+            gradient = (X_batch.T @ (h - y_batch)) / batch_size
+            theta -= alpha * gradient
 
         cost = cost_function(X, y, theta)
         cost_history.append(cost)
 
         if np.isnan(theta).any() or np.isinf(theta).any():
             print(f"NaN or Inf detected at iteration {i}")
-            break
+            return theta, cost_history
 
     return theta, cost_history
 
@@ -42,7 +51,6 @@ def main(dataset_path, exclude_columns):
     data = pd.read_csv(dataset_path)
 
     if data.isnull().values.any():
-        print("Missing values found, filling them with the median.")
         data.fillna(data.median(numeric_only=True), inplace=True)
 
     X = data.iloc[:, 6:].values
@@ -50,6 +58,7 @@ def main(dataset_path, exclude_columns):
     if exclude_columns:
         exclude_indices = [int(i) - 6 for i in exclude_columns]
         X = np.delete(X, exclude_indices, axis=1)
+
 
     mean = [custom_mean(X[:, i]) for i in range(X.shape[1])]
     std = [custom_std(X[:, i], mean[i]) for i in range(X.shape[1])]
@@ -61,14 +70,15 @@ def main(dataset_path, exclude_columns):
     X = np.hstack([np.ones((X.shape[0], 1)), X])
 
     alpha = 0.001
-    iterations = 10000
+    iterations = 1000
+    batch_size = 32
     num_classes = 4
 
     all_theta = np.zeros((num_classes, X.shape[1]))
 
     for i in range(num_classes):
         y_i = np.where(y == i, 1, 0)
-        theta, _ = gradient_descent(X, y_i, alpha, iterations)
+        theta, _ = mini_batch_gradient_descent(X, y_i, alpha, iterations, batch_size)
         all_theta[i] = theta
 
     np.savetxt('weights.csv', all_theta, delimiter=',')
@@ -82,4 +92,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.dataset_path, args.exclude)
+    main(args.dataset_path,args.exclude)

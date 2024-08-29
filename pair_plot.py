@@ -24,7 +24,6 @@ def load_csv(filename):
     return np.array(dataset, dtype=object)
 
 def pair_plot_hist(ax, X):
-    # Определение границ для разбиения данных на группы
     bins = [0, 327, 856, 1299, len(X)]
     colors = ['red', 'yellow', 'blue', 'green']
     for start, end, color in zip(bins[:-1], bins[1:], colors):
@@ -33,7 +32,6 @@ def pair_plot_hist(ax, X):
         ax.hist(h, alpha=0.5, color=color)
 
 def pair_plot_scatter(ax, X, y):
-    # Определение границ для разбиения данных на группы
     bins = [0, 327, 856, 1299, len(X)]
     colors = ['red', 'yellow', 'blue', 'green']
     for start, end, color in zip(bins[:-1], bins[1:], colors):

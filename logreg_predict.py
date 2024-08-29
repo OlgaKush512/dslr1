@@ -17,7 +17,7 @@ def custom_std(X, mean):
     variance = sum((x - mean) ** 2 for x in X) / len(X)
     return variance ** 0.5
 
-def main(weights_path, dataset_path):
+def main(weights_path, dataset_path, exclude_columns):
     data = pd.read_csv(dataset_path)
 
     if data.isnull().values.any():
@@ -26,6 +26,10 @@ def main(weights_path, dataset_path):
 
     X = data.iloc[:, 6:].values
     print(f"Example of the data after loading: {X[:5]}")
+
+    if exclude_columns:
+        exclude_indices = [int(i) - 6 for i in exclude_columns]
+        X = np.delete(X, exclude_indices, axis=1)
 
     indices = data['Index']
 
@@ -54,7 +58,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Predict Hogwarts houses from a dataset.')
     parser.add_argument('weights_path', type=str, help='Path to the weights file (CSV format).')
     parser.add_argument('dataset_path', type=str, help='Path to the dataset file (CSV format).')
+    parser.add_argument('--exclude', type=int, nargs='*', help='Column indices to exclude from the features.')
 
     args = parser.parse_args()
 
-    main(args.weights_path, args.dataset_path)
+    main(args.weights_path, args.dataset_path, args.exclude)
